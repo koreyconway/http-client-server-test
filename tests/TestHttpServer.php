@@ -28,33 +28,32 @@ class TestHttpServer extends \PHPUnit_Framework_TestCase {
         );
 
         $this->assertEquals(
-            $httpRequest->getRequestTarget(),
-            $uri_string
+            $uri_string,
+            $httpRequest->getRequestTarget()
+
         );
 
         $this->assertEquals(
-            $httpRequest->getMethod(),
-            'GET'
+            'GET',
+            $httpRequest->getMethod()
         );
 
         $this->assertEquals(
-            $httpRequest->getUri(),
-            new Uri($uri_string)
+            new Uri($uri_string),
+            $httpRequest->getUri()
         );
 
+        // Note: if the URI is being updated with the request than the host header must be updated
         $this->assertEquals(
-
-            $httpRequest->withRequestTarget('https://pillrcompany.com/intern/alt'),
             $httpRequest =  new HttpRequest(
                 '1.1',
                 'GET',
                 new Uri('https://pillrcompany.com/intern/alt'),
-                array('Accept' => 'application/json'),
+                array('Accept' => 'application/json', 'Host' => 'pillrcompany.com'),
                 ''
-            )
-
+            ),
+            $httpRequest->withRequestTarget('https://pillrcompany.com/intern/alt')
         );
-
     }
 
     public function testResponse()
@@ -81,11 +80,11 @@ class TestHttpServer extends \PHPUnit_Framework_TestCase {
             'hello'
         );
 
-        $this->assertEquals($httpResponse->getStatusCode(), '200');
+        $this->assertEquals('200', $httpResponse->getStatusCode());
 
         $this->assertEquals(
-            $httpResponse->withStatus('404', 'Not Found'),
-            $httpResponseAlt
+            $httpResponseAlt,
+            $httpResponse->withStatus('404', 'Not Found')
         );
     }
 }
