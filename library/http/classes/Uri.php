@@ -24,7 +24,21 @@ use \Psr\Http\Message\UriInterface as UriInterface;
  */
 class Uri implements UriInterface
 {
-    
+    protected $rawUriString, $scheme, $userInfo, $host, $port, $path, $query, $fragment;
+
+    public function __construct($uriString) {
+        $this->rawUriString = $uriString;
+        $components = parse_url($uriString);
+        $this->scheme = strtolower($components['scheme']);
+
+        $this->userInfo = ($components['user'] ?? '') . (!empty($components['pass']) ? ':' . $components['pass'] : '');
+        $this->port = $components['port'] ?? '';
+        $this->host = $components['host'] ?? '';
+        $this->path = $components['path'] ?? '';
+        $this->query = $components['query'] ?? '';
+        $this->fragment = $components['fragment'] ?? '';
+    }
+
     /**
      * Retrieve the scheme component of the URI.
      *
@@ -41,7 +55,7 @@ class Uri implements UriInterface
      */
     public function getScheme()
     {
-
+        return $this->scheme;
     }
 
     /**
@@ -64,7 +78,10 @@ class Uri implements UriInterface
      */
     public function getAuthority()
     {
-
+        $authority = ($this->userInfo) ? $this->userInfo . '@' : '';
+        $authority .= $this->host;
+        $authority .= ($this->port) ? ':' . $this->port : '';
+        return $authority;
     }
 
     /**
@@ -84,7 +101,7 @@ class Uri implements UriInterface
      */
     public function getUserInfo()
     {
-
+        return $this->userInfo;
     }
 
     /**
@@ -100,7 +117,7 @@ class Uri implements UriInterface
      */
     public function getHost()
     {
-
+        return $this->host;
     }
 
     /**
@@ -120,7 +137,7 @@ class Uri implements UriInterface
      */
     public function getPort()
     {
-
+        return $this->port;
     }
 
     /**
@@ -150,7 +167,7 @@ class Uri implements UriInterface
      */
     public function getPath()
     {
-
+        return $this->path;
     }
 
     /**
@@ -175,7 +192,7 @@ class Uri implements UriInterface
      */
     public function getQuery()
     {
-
+        return $this->query;
     }
 
     /**
@@ -196,7 +213,7 @@ class Uri implements UriInterface
      */
     public function getFragment()
     {
-
+        return $this->fragment;
     }
 
     /**
@@ -217,7 +234,9 @@ class Uri implements UriInterface
      */
     public function withScheme($scheme)
     {
-
+        $newUri = clone $this;
+        $newUri->scheme = strtolower($scheme);
+        return $newUri;
     }
 
     /**
@@ -236,7 +255,10 @@ class Uri implements UriInterface
      */
     public function withUserInfo($user, $password = null)
     {
-
+        $newUri = clone $this;
+        $newUri->userInfo = $user;
+        $newUri->userInfo .= ($password) ? ':' . $password : '';
+        return $newUri;
     }
 
     /**
@@ -253,7 +275,9 @@ class Uri implements UriInterface
      */
     public function withHost($host)
     {
-
+        $newUri = clone $this;
+        $newUri->host = $host;
+        return $newUri;
     }
 
     /**
@@ -275,7 +299,9 @@ class Uri implements UriInterface
      */
     public function withPort($port)
     {
-
+        $newUri = clone $this;
+        $newUri->port = $port;
+        return $newUri;
     }
 
     /**
@@ -302,7 +328,15 @@ class Uri implements UriInterface
      */
     public function withPath($path)
     {
+        $newUri = clone $this;
 
+        // Start with slash
+        if (substr($path, 0, 1) != '/') {
+            $path = '/' . $path;
+        }
+
+        $newUri->path = $path;
+        return $newUri;
     }
 
     /**
@@ -322,7 +356,9 @@ class Uri implements UriInterface
      */
     public function withQuery($query)
     {
-
+        $newUri = clone $this;
+        $newUri->query = $query;
+        return $newUri;
     }
 
     /**
@@ -341,7 +377,9 @@ class Uri implements UriInterface
      */
     public function withFragment($fragment)
     {
-
+        $newUri = clone $this;
+        $newUri->fragment = $fragment;
+        return $newUri;
     }
 
     /**
@@ -369,7 +407,12 @@ class Uri implements UriInterface
      */
     public function __toString()
     {
-        
+        $str = $this->getScheme() . '://';
+        $str .= $this->getAuthority();
+        $str .= $this->path;
+        $str .= ($this->query) ? '?' . $this->query : '';
+        $str .= ($this->fragment) ? '#' . $this->fragment : '';
+        return $str;
     }
 
 }
