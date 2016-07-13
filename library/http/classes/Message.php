@@ -18,6 +18,25 @@ use Psr\Http\Message\StreamInterface as StreamInterface;
  */
 class Message implements MessageInterface
 {
+    protected $protocolVersion, $headers, $headersOriginalCase, $body;
+
+    public function __construct($protocolVersion, $headers, StreamInterface $body) {
+        if ($protocolVersion != '1.0' && $protocolVersion != '1.1') {
+            throw new InvalidArgumentException('Invalid HTTP protocol version');
+        }
+
+        $this->protocolVersion = $protocolVersion;
+        $this->body = $body;
+        $this->headers = array();
+        $this->headersOriginalCase = array();
+
+        foreach ($headers as $key => $value) {
+            $lowerKey = strtolower($key);
+            $this->headers[$lowerKey] = is_array($value) ? $value : array($value);
+            $this->headersOriginalCase[$lowerKey] = $key;
+        }
+    }
+
     /**
      * Retrieves the HTTP protocol version as a string.
      *
@@ -27,7 +46,7 @@ class Message implements MessageInterface
      */
     public function getProtocolVersion()
     {
-
+        return $this->protocolVersion;
     }
 
     /**
@@ -45,7 +64,13 @@ class Message implements MessageInterface
      */
     public function withProtocolVersion($version)
     {
+        if ($version != '1.0' && $version != '1.1') {
+            throw new InvalidArgumentException('Invalid HTTP protocol version');
+        }
 
+        $newMessage = clone $this;
+        $newMessage->protocolVersion = $version;
+        return $newMessage;
     }
 
     /**
@@ -75,7 +100,11 @@ class Message implements MessageInterface
      */
     public function getHeaders()
     {
-
+        $headers = array();
+        foreach($this->headers as $key => $value) {
+            $headers[$this->headersOriginalCase[$key]] = $this->headers[$key];
+        }
+        return $headers;
     }
 
     /**
@@ -88,7 +117,7 @@ class Message implements MessageInterface
      */
     public function hasHeader($name)
     {
-
+        return array_key_exists(strtolower($name), $this->headers);
     }
 
     /**
@@ -107,7 +136,11 @@ class Message implements MessageInterface
      */
     public function getHeader($name)
     {
+        if (!$this->hasHeader($name)) {
+            return array();
+        }
 
+        return $this->headers[strtolower($name)];
     }
 
     /**
@@ -131,7 +164,7 @@ class Message implements MessageInterface
      */
     public function getHeaderLine($name)
     {
-
+        return implode(', ', $this->getHeader($name));
     }
 
     /**
@@ -151,7 +184,11 @@ class Message implements MessageInterface
      */
     public function withHeader($name, $value)
     {
-
+        $newMessage = clone $this;
+        $lowerKey = strtolower($name);
+        $newMessage->headers[$lowerKey] = is_array($value) ? $value : array($value);
+        $newMessage->headersOriginalCase[$lowerKey] = $name;
+        return $newMessage;
     }
 
     /**
@@ -173,7 +210,20 @@ class Message implements MessageInterface
      */
     public function withAddedHeader($name, $value)
     {
+        if (!$this->hasHeader($name)) {
+            return $this->withHeader($name, $value);
+        }
 
+        $newMessage = clone $this;
+        $lowerKey = strtolower($name);
+
+        if ( is_array($value) ) {
+            array_merge($newMessage->headers[$lowerKey], $value);
+        } else {
+            $newMessage->headers[$lowerKey][] = $value;
+        }
+
+        return $newMessage;
     }
 
     /**
@@ -190,7 +240,11 @@ class Message implements MessageInterface
      */
     public function withoutHeader($name)
     {
-
+        $newMessage = clone $this;
+        $lowerKey = strtolower($name);
+        unset($newMessage->headers[$lowerKey]);
+        unset($newMessage->headersOriginalCase[$lowerKey]);
+        return $newMessage;
     }
 
     /**
@@ -200,7 +254,7 @@ class Message implements MessageInterface
      */
     public function getBody()
     {
-
+        return $this->body;
     }
 
     /**
@@ -218,6 +272,8 @@ class Message implements MessageInterface
      */
     public function withBody(StreamInterface $body)
     {
-
+        $newMessage = clone $this;
+        $newMessage->body = $body;
+        return $newMessage;
     }
 }
