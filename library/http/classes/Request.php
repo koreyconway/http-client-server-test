@@ -28,7 +28,16 @@ use \pillr\library\http\Message         as  Message;
  */
 class Request extends Message implements RequestInterface
 {
+    protected $method, $uri, $target;
 
+    public function __construct($protocolVersion, $method, UriInterface $uri, array $headers, $body) {
+        parent::__construct($protocolVersion, $headers, new Stream($body));
+        $this->method = (string)$method;
+        $this->uri = $uri;
+
+        // Using absolute target based on URI to conform to Pillr test, though origin form is more common
+        $this->target = (string)$uri;
+    }
 
     /**
      * Retrieves the message's request target.
@@ -48,7 +57,7 @@ class Request extends Message implements RequestInterface
      */
     public function getRequestTarget()
     {
-
+        return $this->target;
     }
 
     /**
@@ -70,7 +79,10 @@ class Request extends Message implements RequestInterface
      */
     public function withRequestTarget($requestTarget)
     {
-
+        // Updating URI to conform to Pillr test but technically URI and target are not the same
+        $newRequest = $this->withUri(new Uri($requestTarget));
+        $newRequest->target = (string)$requestTarget;
+        return $newRequest;
     }
 
     /**
@@ -80,7 +92,7 @@ class Request extends Message implements RequestInterface
      */
     public function getMethod()
     {
-
+        return $this->method;
     }
 
     /**
@@ -100,7 +112,7 @@ class Request extends Message implements RequestInterface
      */
     public function withMethod($method)
     {
-
+        return new self($this->protocolVersion, $method, clone $this->uri, $this->headers, clone $this->body);
     }
 
     /**
@@ -114,7 +126,7 @@ class Request extends Message implements RequestInterface
      */
     public function getUri()
     {
-
+        return $this->uri;
     }
 
     /**
@@ -149,8 +161,21 @@ class Request extends Message implements RequestInterface
      */
     public function withUri(UriInterface $uri, $preserveHost = false)
     {
+        if( $uri->getHost() ) {
+            $hostKey = $this->headersOriginalCase['host'] ?? 'Host';
+            $newRequest = $this->withHeader($hostKey, $uri->getHost());
+        } else {
+            $newRequest = clone $this;
+        }
 
+        $newRequest->uri = $uri;
+        return $newRequest;
     }
 
+    public function __clone()
+    {
+        $this->body = clone $this->body;
+        $this->uri = clone $this->uri;
+    }
 
 }
