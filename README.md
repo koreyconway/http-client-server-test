@@ -38,6 +38,7 @@ Server: <SERVER-PROVIDING-THE-RESPONSE>
 Last-Modified: <LAST-TIME-CONTENT-MODIFIED-DATE-TIME-STRING>
 Content-Length: <MESSAGE-BODY-STRING-LENGTH>
 Content-Type: application/json
+
 {
     "@id": "<URI-THAT-WAS-REQUESTED>",
     "to": "Pillr",
