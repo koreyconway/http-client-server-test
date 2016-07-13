@@ -12,6 +12,12 @@ use \Psr\Http\Message\StreamInterface as StreamInterface;
  */
 class Stream implements StreamInterface
 {
+    protected $data, $offset = 0;
+
+    public function __construct($data) {
+        $this->data = (string)$data;
+    }
+
     /**
      * Reads all data from the stream into a string, from the beginning to end.
      *
@@ -28,7 +34,8 @@ class Stream implements StreamInterface
      */
     public function __toString()
     {
-
+        $this->offset = strlen($this->data);
+        return $this->data;
     }
 
     /**
@@ -38,7 +45,8 @@ class Stream implements StreamInterface
      */
     public function close()
     {
-
+        $this->data = '';
+        $this->offset = 0;
     }
 
     /**
@@ -50,7 +58,7 @@ class Stream implements StreamInterface
      */
     public function detach()
     {
-
+        return $this->data;
     }
 
     /**
@@ -60,7 +68,8 @@ class Stream implements StreamInterface
      */
     public function getSize()
     {
-
+        // Note: this is not actually the byte size if the string has multi-byte characters
+        return strlen($this->data);
     }
 
     /**
@@ -71,7 +80,7 @@ class Stream implements StreamInterface
      */
     public function tell()
     {
-
+        return $this->offset;
     }
 
     /**
@@ -81,7 +90,7 @@ class Stream implements StreamInterface
      */
     public function eof()
     {
-
+        return ($this->offset === strlen($this->data));
     }
 
     /**
@@ -91,7 +100,8 @@ class Stream implements StreamInterface
      */
     public function isSeekable()
     {
-
+        // Assuming only strings used, thus always seekable
+        return true;
     }
 
     /**
@@ -108,7 +118,18 @@ class Stream implements StreamInterface
      */
     public function seek($offset, $whence = SEEK_SET)
     {
-
+        switch ($whence) {
+            case SEEK_END:
+                $this->offset = strlen($this->data) + (int)$offset;
+                break;
+            case SEEK_CUR:
+                $this->offset += (int)$offset;
+                break;
+            case SEEK_SET:
+            default:
+                $this->offset = (int)$offset;
+                break;
+        }
     }
 
     /**
@@ -123,7 +144,7 @@ class Stream implements StreamInterface
      */
     public function rewind()
     {
-
+        $this->offset = 0;
     }
 
     /**
@@ -133,7 +154,7 @@ class Stream implements StreamInterface
      */
     public function isWritable()
     {
-
+        return true;
     }
 
     /**
@@ -145,7 +166,10 @@ class Stream implements StreamInterface
      */
     public function write($string)
     {
-
+        $string = (string)$string;
+        $this->data = substr_replace($this->data, $string, $this->offset, 0);
+        $this->offset += strlen($string);
+        return strlen($string);
     }
 
     /**
@@ -155,7 +179,7 @@ class Stream implements StreamInterface
      */
     public function isReadable()
     {
-
+        return true;
     }
 
     /**
@@ -170,7 +194,7 @@ class Stream implements StreamInterface
      */
     public function read($length)
     {
-
+        substr($this->data, $this->offset, (int)$length);
     }
 
     /**
@@ -182,7 +206,7 @@ class Stream implements StreamInterface
      */
     public function getContents()
     {
-
+        return substr($this->data, $this->offset);
     }
 
     /**
@@ -199,6 +223,24 @@ class Stream implements StreamInterface
      */
     public function getMetadata($key = null)
     {
-        
+        $metadata = array(
+            'timed_out' => false,
+            'blocked' => false,
+            'eof' => $this->eof(),
+            'unread_bytes' => strlen($this->data) - $this->offset,
+            'stream_type' => 'string',
+            'wrapper_type' => '',
+            'wrapper_data' => '',
+            'mode' => 'r+',
+            'seekable' => true,
+        );
+
+        if ( null === $key ) {
+            return $metadata;
+        } elseif ( array_key_exists($key, $metadata) ) {
+            return $metadata[$key];
+        }
+
+        return null;
     }
 }
