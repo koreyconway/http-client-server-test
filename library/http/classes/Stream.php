@@ -12,6 +12,10 @@ use \Psr\Http\Message\StreamInterface as StreamInterface;
  */
 class Stream implements StreamInterface
 {
+    // Assuming only string needed (for simple implementation)
+    // Each method makes this assumption and avoids real complexities that would
+    // involve byte management and encodings for string conversions
+
     protected $data, $offset = 0;
 
     public function __construct($data) {
